@@ -15,7 +15,6 @@ export const createHero = (
     // Use tx.pure.string() for string arguments
     // Use tx.pure.u64() for number arguments (convert power to BigInt)
     // The target module is 'arena', not 'hero'
-
   tx.moveCall({
     target: `${packageId}::hero::create_hero`,
     arguments: [

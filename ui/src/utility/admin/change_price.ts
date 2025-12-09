@@ -13,12 +13,15 @@ export const changePrice = (packageId: string, listHeroId: string, newPriceInSui
     // Use tx.object() for objects
     // Use tx.pure.u64() for the new price
     // Convert price from SUI to MIST before sending
-  
   const newPriceInMist = BigInt(newPriceInSui) * 1_000_000_000n;
 
   tx.moveCall({
     target: `${packageId}::marketplace::change_the_price`,
-    arguments: [tx.object(adminCapId), tx.object(listHeroId), tx.pure.u64(newPriceInMist)],
+    arguments: [
+      tx.object(adminCapId),
+      tx.object(listHeroId),
+      tx.pure.u64(newPriceInMist),
+    ],
   });
   
   return tx;

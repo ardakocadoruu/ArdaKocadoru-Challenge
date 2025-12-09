@@ -16,9 +16,8 @@ export const buyHero = (packageId: string, listHeroId: string, priceInSui: strin
     // Hints:
     // Use tx.object() for the ListHero object
     // Use the paymentCoin from splitCoins for payment
-    
   const priceInMist = BigInt(priceInSui) * 1_000_000_000n;
-  const [paymentCoin] = tx.splitCoins(tx.gas, [priceInMist]);
+  const [paymentCoin] = tx.splitCoins(tx.gas, [tx.pure.u64(priceInMist)]);
 
   tx.moveCall({
     target: `${packageId}::marketplace::buy_hero`,
