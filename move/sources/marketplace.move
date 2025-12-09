@@ -3,7 +3,11 @@ module challenge::marketplace;
 use challenge::hero::Hero;
 use sui::coin::{Self, Coin};
 use sui::event;
+use sui::object;
+use sui::object::UID;
 use sui::sui::SUI;
+use sui::transfer;
+use sui::tx_context::TxContext;
 
 // ========= ERRORS =========
 
@@ -50,6 +54,8 @@ fun init(ctx: &mut TxContext) {
         // Hints:
         // Create AdminCap id with object::new(ctx)
     // TODO: Transfer it to the module publisher (ctx.sender()) using transfer::public_transfer() function
+    let admin_cap = AdminCap { id: object::new(ctx) };
+    transfer::public_transfer(admin_cap, ctx.sender());
 }
 
 public fun list_hero(nft: Hero, price: u64, ctx: &mut TxContext) {
@@ -60,6 +66,19 @@ public fun list_hero(nft: Hero, price: u64, ctx: &mut TxContext) {
         // - Set nft, price, and seller (ctx.sender()) fields
     // TODO: Emit HeroListed event with listing details (Don't forget to use object::id(&list_hero) )
     // TODO: Use transfer::share_object() to make it publicly tradeable
+    let list_hero = ListHero {
+        id: object::new(ctx),
+        nft,
+        price,
+        seller: ctx.sender(),
+    };
+    event::emit(HeroListed {
+        list_hero_id: object::id(&list_hero),
+        price,
+        seller: ctx.sender(),
+        timestamp: ctx.epoch_timestamp_ms(),
+    });
+    transfer::share_object(list_hero);
 }
 
 #[allow(lint(self_transfer))]
@@ -73,6 +92,19 @@ public fun buy_hero(list_hero: ListHero, coin: Coin<SUI>, ctx: &mut TxContext) {
     // TODO: Transfer hero NFT to buyer (ctx.sender())
     // TODO: Emit HeroBought event with transaction details (Don't forget to use object::uid_to_inner(&id) )
     // TODO: Delete the listing ID (object::delete(id))
+    let ListHero { id, nft, price, seller } = list_hero;
+    assert!(coin::value(&coin) == price, EInvalidPayment);
+
+    transfer::public_transfer(coin, seller);
+    transfer::public_transfer(nft, ctx.sender());
+    event::emit(HeroBought {
+        list_hero_id: object::uid_to_inner(&id),
+        price,
+        buyer: ctx.sender(),
+        seller,
+        timestamp: ctx.epoch_timestamp_ms(),
+    });
+    object::delete(id);
 }
 
 // ========= ADMIN FUNCTIONS =========
@@ -85,6 +117,9 @@ public fun delist(_: &AdminCap, list_hero: ListHero) {
         // Destructure list_hero (ignore price with "price: _")
     // TODO:Transfer NFT back to original seller
     // TODO:Delete the listing ID (object::delete(id))
+    let ListHero { id, nft, price: _, seller } = list_hero;
+    transfer::public_transfer(nft, seller);
+    object::delete(id);
 }
 
 public fun change_the_price(_: &AdminCap, list_hero: &mut ListHero, new_price: u64) {
@@ -94,6 +129,7 @@ public fun change_the_price(_: &AdminCap, list_hero: &mut ListHero, new_price: u
     // TODO: Update the listing price
         // Hints:
         // Access the price field of list_hero and update it
+    list_hero.price = new_price;
 }
 
 // ========= GETTER FUNCTIONS =========

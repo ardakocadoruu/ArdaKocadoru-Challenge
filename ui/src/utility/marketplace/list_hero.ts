@@ -18,5 +18,12 @@ export const listHero = (
   // - Use tx.pure.u64() for the price in MIST
   // - Remember: 1 SUI = 1_000_000_000 MIST
 
+  const priceInMist = BigInt(priceInSui) * 1_000_000_000n;
+
+  tx.moveCall({
+    target: `${packageId}::marketplace::list_hero`,
+    arguments: [tx.object(heroId), tx.pure.u64(priceInMist)],
+  });
+
   return tx;
 };
